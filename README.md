@@ -8,6 +8,7 @@ The library currently includes:
 - shared environment, request builders, and an HTTP pipeline
 - read-only bootstrap modules for company info and generic queries
 - resource modules for customers, items, invoices, payments, accounts, and vendors
+- CDC helpers for grouped incremental sync results
 - typed library error values
 - OAuth 2 helpers for authorization URL generation, code exchange, and refresh
 - Bypass-based test helpers for asserting request shape
@@ -19,7 +20,7 @@ Add `ex_quickbooks` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:ex_quickbooks, "~> 0.6.0"}
+    {:ex_quickbooks, "~> 0.7.0"}
   ]
 end
 ```
@@ -142,6 +143,48 @@ Example customer flow:
 ```
 
 The same pattern works for items, invoices, payments, accounts, and vendors.
+
+## CDC sync helpers
+
+Fetch grouped changes since a checkpoint:
+
+```elixir
+{:ok, customer_changes} =
+  ExQuickbooks.CDC.fetch(
+    client,
+    [:customer],
+    "2026-04-20T00:00:00Z"
+  )
+```
+
+Fetch multiple entity groups together:
+
+```elixir
+{:ok, item_changes} =
+  ExQuickbooks.CDC.fetch(
+    client,
+    [:item],
+    "2026-04-20T00:00:00Z"
+  )
+
+{:ok, invoice_and_payment_changes} =
+  ExQuickbooks.CDC.fetch(
+    client,
+    [:invoice, :payment],
+    "2026-04-20T00:00:00Z"
+  )
+```
+
+Each entity key maps to grouped sync data:
+
+```elixir
+%{
+  "Customer" => %{
+    records: [%{"Id" => "123"}],
+    deleted_ids: [%{"Type" => "Customer", "Id" => "456"}]
+  }
+}
+```
 
 ## OAuth 2
 

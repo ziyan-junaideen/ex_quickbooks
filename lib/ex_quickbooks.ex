@@ -8,6 +8,7 @@ defmodule ExQuickbooks do
   - shared request builders and an HTTP pipeline for company-scoped endpoints
   - read-only bootstrap modules for company info and generic queries
   - resource modules for customers, items, invoices, payments, accounts, and vendors
+  - CDC helpers for grouped incremental sync results
   - OAuth 2 helpers for authorization URL generation, code exchange, and token refresh
 
   ## Examples
