@@ -4,6 +4,8 @@ defmodule ExQuickbooks.CDC do
 
   CDC responses are returned as grouped per-entity maps so callers can process
   changed records and deleted IDs without re-parsing the raw QuickBooks payload.
+  Known records are normalized into ExQuickbooks structs and deletions become
+  `%ExQuickbooks.DeletedId{}` values.
   """
 
   @supported_entity_names %{
@@ -22,8 +24,8 @@ defmodule ExQuickbooks.CDC do
   }
 
   @type entity_group :: %{
-          records: [map()],
-          deleted_ids: [map()]
+          records: [struct() | map()],
+          deleted_ids: [ExQuickbooks.DeletedId.t()]
         }
 
   @type grouped_changes :: %{
@@ -71,21 +73,22 @@ defmodule ExQuickbooks.CDC do
 
   ## Examples
 
-      iex> ExQuickbooks.CDC.group_changes(%{
-      ...>   "CDCResponse" => [
-      ...>     %{
-      ...>       "Customer" => [%{"Id" => "123"}],
-      ...>       "DeletedId" => [%{"Type" => "Customer", "Id" => "456"}]
-      ...>     }
-      ...>   ]
-      ...> })
-      {:ok,
-       %{
-         "Customer" => %{
-           records: [%{"Id" => "123"}],
-           deleted_ids: [%{"Type" => "Customer", "Id" => "456"}]
-         }
-       }}
+      iex> {:ok, grouped_changes} =
+      ...>   ExQuickbooks.CDC.group_changes(%{
+      ...>     "CDCResponse" => [
+      ...>       %{
+      ...>         "Customer" => [%{"Id" => "123"}],
+      ...>         "DeletedId" => [%{"Type" => "Customer", "Id" => "456"}]
+      ...>       }
+      ...>     ]
+      ...>   })
+      iex> match?(%ExQuickbooks.Customer{id: "123"}, hd(grouped_changes["Customer"].records))
+      true
+      iex> match?(
+      ...>   %ExQuickbooks.DeletedId{id: "456", type: "Customer"},
+      ...>   hd(grouped_changes["Customer"].deleted_ids)
+      ...> )
+      true
   """
   @spec group_changes([map()] | map()) ::
           {:ok, grouped_changes()} | {:error, ExQuickbooks.Error.t()}
@@ -184,8 +187,10 @@ defmodule ExQuickbooks.CDC do
   end
 
   defp append_deleted_id_to_entity_group(grouped_changes, entity_name, deleted_id) do
+    normalized_deleted_id = ExQuickbooks.Payload.normalize_deleted_id(deleted_id)
+
     update_entity_group(grouped_changes, entity_name, fn entity_group ->
-      %{entity_group | deleted_ids: entity_group.deleted_ids ++ [deleted_id]}
+      %{entity_group | deleted_ids: entity_group.deleted_ids ++ [normalized_deleted_id]}
     end)
   end
 
@@ -284,7 +289,7 @@ defmodule ExQuickbooks.CDC do
         :ignore
 
       is_list(records) ->
-        {:ok, records}
+        {:ok, ExQuickbooks.Payload.normalize_entity_collection(entity_name, records)}
 
       true ->
         :ignore

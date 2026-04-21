@@ -6,6 +6,7 @@ defmodule ExQuickbooks.ResourcesTest do
   @resource_definitions [
     %{
       module: ExQuickbooks.Customers,
+      struct_module: ExQuickbooks.Customer,
       path: "customer",
       response_name: "Customer",
       list_response: [%{"Id" => "123", "DisplayName" => "Acme"}],
@@ -15,6 +16,7 @@ defmodule ExQuickbooks.ResourcesTest do
     },
     %{
       module: ExQuickbooks.Items,
+      struct_module: ExQuickbooks.Item,
       path: "item",
       response_name: "Item",
       list_response: [%{"Id" => "123", "Name" => "Widget"}],
@@ -24,6 +26,7 @@ defmodule ExQuickbooks.ResourcesTest do
     },
     %{
       module: ExQuickbooks.Invoices,
+      struct_module: ExQuickbooks.Invoice,
       path: "invoice",
       response_name: "Invoice",
       list_response: [%{"Id" => "123", "DocNumber" => "INV-001"}],
@@ -33,6 +36,7 @@ defmodule ExQuickbooks.ResourcesTest do
     },
     %{
       module: ExQuickbooks.Payments,
+      struct_module: ExQuickbooks.Payment,
       path: "payment",
       response_name: "Payment",
       list_response: [%{"Id" => "123", "TotalAmt" => 100}],
@@ -42,6 +46,7 @@ defmodule ExQuickbooks.ResourcesTest do
     },
     %{
       module: ExQuickbooks.Accounts,
+      struct_module: ExQuickbooks.Account,
       path: "account",
       response_name: "Account",
       list_response: [%{"Id" => "123", "Name" => "Sales"}],
@@ -51,6 +56,7 @@ defmodule ExQuickbooks.ResourcesTest do
     },
     %{
       module: ExQuickbooks.Vendors,
+      struct_module: ExQuickbooks.Vendor,
       path: "vendor",
       response_name: "Vendor",
       list_response: [%{"Id" => "123", "DisplayName" => "Acme Vendor"}],
@@ -107,7 +113,8 @@ defmodule ExQuickbooks.ResourcesTest do
                  max_retries: 0
                )
 
-      assert returned_collection == resource_definition.list_response
+      assert Enum.map(returned_collection, & &1.attributes) == resource_definition.list_response
+      assert Enum.all?(returned_collection, &(&1.__struct__ == resource_definition.struct_module))
     end
 
     test "#{inspect(resource_definition.module)}.get/3 fetches the resource by id" do
@@ -149,7 +156,8 @@ defmodule ExQuickbooks.ResourcesTest do
                  max_retries: 0
                )
 
-      assert returned_resource == hd(resource_definition.list_response)
+      assert returned_resource.attributes == hd(resource_definition.list_response)
+      assert returned_resource.__struct__ == resource_definition.struct_module
     end
 
     test "#{inspect(resource_definition.module)}.create/3 posts the create payload" do
@@ -187,7 +195,8 @@ defmodule ExQuickbooks.ResourcesTest do
                  max_retries: 0
                )
 
-      assert returned_resource == resource_definition.create_response
+      assert returned_resource.attributes == resource_definition.create_response
+      assert returned_resource.__struct__ == resource_definition.struct_module
     end
 
     test "#{inspect(resource_definition.module)}.update/3 posts the update payload" do
@@ -226,7 +235,8 @@ defmodule ExQuickbooks.ResourcesTest do
                  max_retries: 0
                )
 
-      assert returned_resource == resource_definition.update_attributes
+      assert returned_resource.attributes == resource_definition.update_attributes
+      assert returned_resource.__struct__ == resource_definition.struct_module
     end
 
     test "#{inspect(resource_definition.module)}.get/3 returns not_found for missing resources" do

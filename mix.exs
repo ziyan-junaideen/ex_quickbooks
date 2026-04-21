@@ -63,6 +63,15 @@ defmodule ExQuickbooks.MixProject do
           ExQuickbooks.Payments,
           ExQuickbooks.Accounts,
           ExQuickbooks.Vendors
+        ],
+        "Payload Structs": [
+          ExQuickbooks.Account,
+          ExQuickbooks.Customer,
+          ExQuickbooks.DeletedId,
+          ExQuickbooks.Invoice,
+          ExQuickbooks.Item,
+          ExQuickbooks.Payment,
+          ExQuickbooks.Vendor
         ]
       ]
     ]
@@ -92,6 +101,6 @@ defmodule ExQuickbooks.MixProject do
   end
 
   defp version do
-    "0.8.0"
+    "0.9.0"
   end
 end

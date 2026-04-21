@@ -41,7 +41,7 @@ defmodule ExQuickbooks.Response do
   defp extract_success(response, response_path, normalized_response_body) do
     case fetch_response_value(normalized_response_body, response_path) do
       {:ok, extracted_response_body} ->
-        {:ok, extracted_response_body}
+        {:ok, ExQuickbooks.Payload.normalize_response(response_path, extracted_response_body)}
 
       :error ->
         {:error,

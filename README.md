@@ -12,7 +12,7 @@ Add `ex_quickbooks` to your dependencies:
 ```elixir
 def deps do
   [
-    {:ex_quickbooks, "~> 0.8.0"}
+    {:ex_quickbooks, "~> 0.9.0"}
   ]
 end
 ```
@@ -25,6 +25,7 @@ end
 - company bootstrap helpers and generic query support
 - resource modules for customers, items, invoices, payments, accounts, and vendors
 - CDC helpers for incremental synchronization
+- normalized payload structs for company info, core resources, and CDC deletions
 - typed errors for validation, auth, rate limiting, API faults, and network failures
 
 ## Sandbox setup
@@ -111,6 +112,9 @@ Confirm the client can reach the target company:
 
 ```elixir
 {:ok, company_info} = ExQuickbooks.CompanyInfo.get(client)
+
+company_info.company_name
+#=> "Acme LLC"
 ```
 
 Run raw QuickBooks queries with optional pagination:
@@ -126,7 +130,14 @@ Run raw QuickBooks queries with optional pagination:
 
 {:ok, {"Customer", customers}} =
   ExQuickbooks.Query.top_level_collection(query_response)
+
+hd(customers).id
+#=> "123"
 ```
+
+Known entity payloads are normalized into structs such as
+`ExQuickbooks.CompanyInfo`, `ExQuickbooks.Customer`, and `ExQuickbooks.Invoice`.
+The raw QuickBooks payload remains available in each struct's `attributes` field.
 
 ## Customer and invoice flows
 
@@ -151,8 +162,8 @@ Create and update a customer:
 
 {:ok, updated_customer} =
   ExQuickbooks.Customers.update(client, %{
-    "Id" => created_customer["Id"],
-    "SyncToken" => created_customer["SyncToken"],
+    "Id" => created_customer.id,
+    "SyncToken" => created_customer.sync_token,
     "DisplayName" => "Acme Updated"
   })
 ```
@@ -162,7 +173,7 @@ Create and update an invoice:
 ```elixir
 {:ok, created_invoice} =
   ExQuickbooks.Invoices.create(client, %{
-    "CustomerRef" => %{"value" => created_customer["Id"]},
+    "CustomerRef" => %{"value" => created_customer.id},
     "Line" => [
       %{
         "Amount" => 100,
@@ -173,8 +184,8 @@ Create and update an invoice:
 
 {:ok, updated_invoice} =
   ExQuickbooks.Invoices.update(client, %{
-    "Id" => created_invoice["Id"],
-    "SyncToken" => created_invoice["SyncToken"],
+    "Id" => created_invoice.id,
+    "SyncToken" => created_invoice.sync_token,
     "PrivateNote" => "Updated through ExQuickbooks"
   })
 ```
@@ -218,8 +229,8 @@ Each entity key maps to grouped records and deleted IDs:
 ```elixir
 %{
   "Customer" => %{
-    records: [%{"Id" => "123"}],
-    deleted_ids: [%{"Type" => "Customer", "Id" => "456"}]
+    records: [%ExQuickbooks.Customer{id: "123"}],
+    deleted_ids: [%ExQuickbooks.DeletedId{id: "456", type: "Customer"}]
   }
 }
 ```

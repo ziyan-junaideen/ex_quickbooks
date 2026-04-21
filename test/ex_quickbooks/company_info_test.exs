@@ -33,7 +33,12 @@ defmodule ExQuickbooks.CompanyInfoTest do
       end
     )
 
-    assert {:ok, %{"CompanyName" => "Acme LLC", "Id" => "9130357992221046"}} =
+    assert {:ok,
+            %ExQuickbooks.CompanyInfo{
+              id: "9130357992221046",
+              company_name: "Acme LLC",
+              attributes: %{"CompanyName" => "Acme LLC", "Id" => "9130357992221046"}
+            }} =
              ExQuickbooks.CompanyInfo.get(client,
                base_url: "http://localhost:#{bypass.port}",
                max_retries: 0

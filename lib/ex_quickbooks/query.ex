@@ -4,6 +4,7 @@ defmodule ExQuickbooks.Query do
 
   The query helper accepts raw QuickBooks query statements and optionally
   appends `STARTPOSITION` / `MAXRESULTS` clauses for caller-driven pagination.
+  Known top-level entity collections are normalized into ExQuickbooks structs.
   """
 
   @pagination_schema [
@@ -42,12 +43,14 @@ defmodule ExQuickbooks.Query do
 
   ## Examples
 
-      iex> ExQuickbooks.Query.top_level_collection(%{
-      ...>   "Customer" => [%{"Id" => "123"}],
-      ...>   "startPosition" => 1,
-      ...>   "maxResults" => 1
-      ...> })
-      {:ok, {"Customer", [%{"Id" => "123"}]}}
+      iex> {:ok, {"Customer", customers}} =
+      ...>   ExQuickbooks.Query.top_level_collection(%{
+      ...>     "Customer" => [%ExQuickbooks.Customer{id: "123", attributes: %{"Id" => "123"}}],
+      ...>     "startPosition" => 1,
+      ...>     "maxResults" => 1
+      ...>   })
+      iex> match?(%ExQuickbooks.Customer{id: "123"}, hd(customers))
+      true
   """
   @spec top_level_collection(map()) ::
           {:ok, {String.t(), list()}} | {:error, ExQuickbooks.Error.t()}

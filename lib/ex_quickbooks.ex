@@ -4,7 +4,7 @@ defmodule ExQuickbooks do
 
   ExQuickbooks is a small Elixir client for the QuickBooks Online Accounting
   API. It focuses on a clear library surface: create a validated client, run
-  OAuth flows, execute shared requests, and work with decoded QuickBooks maps.
+  OAuth flows, execute shared requests, and work with normalized QuickBooks structs.
 
   ## Examples
 
