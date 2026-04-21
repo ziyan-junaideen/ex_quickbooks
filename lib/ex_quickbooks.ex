@@ -5,7 +5,7 @@ defmodule ExQuickbooks do
   The library currently provides:
 
   - a validated client struct for QuickBooks API configuration
-  - shared request path helpers for company-scoped endpoints
+  - shared request builders and an HTTP pipeline for company-scoped endpoints
   - OAuth 2 helpers for authorization URL generation, code exchange, and token refresh
 
   ## Examples
@@ -34,5 +34,14 @@ defmodule ExQuickbooks do
           String.t()
   def request_path(client, path_segments, options \\ []) do
     ExQuickbooks.Request.company_path(client, path_segments, options)
+  end
+
+  @doc """
+  Executes a shared QuickBooks request.
+  """
+  @spec request(ExQuickbooks.Client.t(), ExQuickbooks.Request.t(), keyword()) ::
+          {:ok, term()} | {:error, ExQuickbooks.Error.t()}
+  def request(client, request, options \\ []) do
+    ExQuickbooks.HTTP.request(client, request, options)
   end
 end
