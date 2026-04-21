@@ -2,14 +2,9 @@ defmodule ExQuickbooks do
   @moduledoc """
   Public entry points for configuring ExQuickbooks.
 
-  The library currently provides:
-
-  - a validated client struct for QuickBooks API configuration
-  - shared request builders and an HTTP pipeline for company-scoped endpoints
-  - read-only bootstrap modules for company info and generic queries
-  - resource modules for customers, items, invoices, payments, accounts, and vendors
-  - CDC helpers for grouped incremental sync results
-  - OAuth 2 helpers for authorization URL generation, code exchange, and token refresh
+  ExQuickbooks is a small Elixir client for the QuickBooks Online Accounting
+  API. It focuses on a clear library surface: create a validated client, run
+  OAuth flows, execute shared requests, and work with decoded QuickBooks maps.
 
   ## Examples
 
@@ -32,6 +27,19 @@ defmodule ExQuickbooks do
 
   @doc """
   Builds a shared `/v3/company/:realm_id/...` request path.
+
+  ## Examples
+
+      iex> {:ok, client} =
+      ...>   ExQuickbooks.new(
+      ...>     client_id: "client-id",
+      ...>     client_secret: "client-secret",
+      ...>     redirect_uri: "https://example.com/callback",
+      ...>     realm_id: "9130357992221046",
+      ...>     minor_version: 75
+      ...>   )
+      iex> ExQuickbooks.request_path(client, ["customer"], query: [active: true])
+      "/v3/company/9130357992221046/customer?active=true&minorversion=75"
   """
   @spec request_path(ExQuickbooks.Client.t(), [String.t() | atom() | integer()], keyword()) ::
           String.t()

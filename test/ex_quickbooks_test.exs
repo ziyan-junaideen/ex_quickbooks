@@ -2,6 +2,8 @@ defmodule ExQuickbooksTest do
   use ExUnit.Case, async: true
 
   doctest ExQuickbooks
+  doctest ExQuickbooks.Query
+  doctest ExQuickbooks.CDC
 
   test "new/1 delegates to the client builder" do
     assert {:ok, %ExQuickbooks.Client{realm_id: "9130357992221046"}} =

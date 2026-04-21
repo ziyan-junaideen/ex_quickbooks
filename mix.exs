@@ -4,7 +4,7 @@ defmodule ExQuickbooks.MixProject do
   def project do
     [
       app: :ex_quickbooks,
-      version: "0.7.0",
+      version: version(),
       elixir: "~> 1.19",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -33,7 +33,38 @@ defmodule ExQuickbooks.MixProject do
 
   defp docs do
     [
-      main: "ExQuickbooks"
+      main: "ExQuickbooks",
+      extras: ["README.md"],
+      source_ref: "v#{version()}",
+      groups_for_modules: [
+        "Core API": [
+          ExQuickbooks,
+          ExQuickbooks.Client,
+          ExQuickbooks.Error
+        ],
+        Authentication: [
+          ExQuickbooks.Auth,
+          ExQuickbooks.Token
+        ],
+        Transport: [
+          ExQuickbooks.Request,
+          ExQuickbooks.HTTP,
+          ExQuickbooks.Response
+        ],
+        Bootstrap: [
+          ExQuickbooks.CompanyInfo,
+          ExQuickbooks.Query,
+          ExQuickbooks.CDC
+        ],
+        Resources: [
+          ExQuickbooks.Customers,
+          ExQuickbooks.Items,
+          ExQuickbooks.Invoices,
+          ExQuickbooks.Payments,
+          ExQuickbooks.Accounts,
+          ExQuickbooks.Vendors
+        ]
+      ]
     ]
   end
 
@@ -50,10 +81,17 @@ defmodule ExQuickbooks.MixProject do
 
   defp package do
     [
-      licenses: ["Apache-2.0"],
+      name: "ex_quickbooks",
+      files: ["lib", "mix.exs", "README.md", "LICENSE"],
+      licenses: ["MIT"],
       links: %{
-        "GitHub" => "https://github.com/ziyan-junaideen/ex_quickbooks"
+        "GitHub" => "https://github.com/ziyan-junaideen/ex_quickbooks",
+        "HexDocs" => "https://hexdocs.pm/ex_quickbooks"
       }
     ]
+  end
+
+  defp version do
+    "0.8.0"
   end
 end
