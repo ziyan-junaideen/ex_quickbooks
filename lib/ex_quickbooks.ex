@@ -2,8 +2,11 @@ defmodule ExQuickbooks do
   @moduledoc """
   Public entry points for configuring ExQuickbooks.
 
-  Phase 1 provides a validated client struct plus shared request path helpers
-  that the later auth and resource modules can build on.
+  The library currently provides:
+
+  - a validated client struct for QuickBooks API configuration
+  - shared request path helpers for company-scoped endpoints
+  - OAuth 2 helpers for authorization URL generation, code exchange, and token refresh
 
   ## Examples
 
