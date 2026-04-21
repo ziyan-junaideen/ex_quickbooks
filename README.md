@@ -1,21 +1,41 @@
 # ExQuickbooks
 
-**TODO: Add description**
+ExQuickbooks is an Elixir client for the QuickBooks Online Accounting API.
+
+Phase 1 establishes the project foundation:
+
+- a validated client struct
+- shared environment and request path helpers
+- typed library error values
+- Bypass-based test helpers for asserting request shape
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `ex_quickbooks` to your list of dependencies in `mix.exs`:
+Add `ex_quickbooks` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:ex_quickbooks, "~> 0.1.0"}
+    {:ex_quickbooks, "~> 0.2.0"}
   ]
 end
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/ex_quickbooks>.
+## Foundation usage
 
+```elixir
+{:ok, client} =
+  ExQuickbooks.new(
+    client_id: "client-id",
+    client_secret: "client-secret",
+    redirect_uri: "https://example.com/callback",
+    realm_id: "9130357992221046",
+    access_token: "access-token",
+    refresh_token: "refresh-token",
+    environment: :sandbox,
+    minor_version: 75
+  )
+
+ExQuickbooks.request_path(client, ["customer"], query: [active: true])
+#=> "/v3/company/9130357992221046/customer?active=true&minorversion=75"
+```
