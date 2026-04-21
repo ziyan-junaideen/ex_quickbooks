@@ -1,6 +1,9 @@
 defmodule ExQuickbooks.CDC do
   @moduledoc """
   Change Data Capture helpers for incremental QuickBooks synchronization.
+
+  CDC responses are returned as grouped per-entity maps so callers can process
+  changed records and deleted IDs without re-parsing the raw QuickBooks payload.
   """
 
   @supported_entity_names %{
@@ -29,6 +32,11 @@ defmodule ExQuickbooks.CDC do
 
   @doc """
   Returns the currently supported CDC entity names.
+
+  ## Examples
+
+      iex> "Customer" in ExQuickbooks.CDC.supported_entity_names()
+      true
   """
   @spec supported_entity_names() :: [String.t()]
   def supported_entity_names do
@@ -60,6 +68,24 @@ defmodule ExQuickbooks.CDC do
 
   @doc """
   Groups a CDC response by entity name and preserves deleted IDs per entity.
+
+  ## Examples
+
+      iex> ExQuickbooks.CDC.group_changes(%{
+      ...>   "CDCResponse" => [
+      ...>     %{
+      ...>       "Customer" => [%{"Id" => "123"}],
+      ...>       "DeletedId" => [%{"Type" => "Customer", "Id" => "456"}]
+      ...>     }
+      ...>   ]
+      ...> })
+      {:ok,
+       %{
+         "Customer" => %{
+           records: [%{"Id" => "123"}],
+           deleted_ids: [%{"Type" => "Customer", "Id" => "456"}]
+         }
+       }}
   """
   @spec group_changes([map()] | map()) ::
           {:ok, grouped_changes()} | {:error, ExQuickbooks.Error.t()}

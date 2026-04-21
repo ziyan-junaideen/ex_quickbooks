@@ -1,6 +1,9 @@
 defmodule ExQuickbooks.Query do
   @moduledoc """
   Generic query helpers for QuickBooks Online.
+
+  The query helper accepts raw QuickBooks query statements and optionally
+  appends `STARTPOSITION` / `MAXRESULTS` clauses for caller-driven pagination.
   """
 
   @pagination_schema [
@@ -36,6 +39,15 @@ defmodule ExQuickbooks.Query do
 
   @doc """
   Extracts the primary top-level collection from a `QueryResponse` payload.
+
+  ## Examples
+
+      iex> ExQuickbooks.Query.top_level_collection(%{
+      ...>   "Customer" => [%{"Id" => "123"}],
+      ...>   "startPosition" => 1,
+      ...>   "maxResults" => 1
+      ...> })
+      {:ok, {"Customer", [%{"Id" => "123"}]}}
   """
   @spec top_level_collection(map()) ::
           {:ok, {String.t(), list()}} | {:error, ExQuickbooks.Error.t()}

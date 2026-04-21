@@ -1,92 +1,119 @@
 # ExQuickbooks
 
-ExQuickbooks is an Elixir client for the QuickBooks Online Accounting API.
-
-The library currently includes:
-
-- a validated client struct
-- shared environment, request builders, and an HTTP pipeline
-- read-only bootstrap modules for company info and generic queries
-- resource modules for customers, items, invoices, payments, accounts, and vendors
-- CDC helpers for grouped incremental sync results
-- typed library error values
-- OAuth 2 helpers for authorization URL generation, code exchange, and refresh
-- Bypass-based test helpers for asserting request shape
+ExQuickbooks is an Elixir client for the **QuickBooks Online Accounting API**.
+It keeps the public API library-oriented and explicit: callers build a client,
+run OAuth flows, use resource helpers, and handle expected failures through
+`{:ok, result}` / `{:error, %ExQuickbooks.Error{}}` tuples.
 
 ## Installation
 
-Add `ex_quickbooks` to your list of dependencies in `mix.exs`:
+Add `ex_quickbooks` to your dependencies:
 
 ```elixir
 def deps do
   [
-    {:ex_quickbooks, "~> 0.7.0"}
+    {:ex_quickbooks, "~> 0.8.0"}
   ]
 end
 ```
 
-## Foundation usage
+## What the library covers
+
+- OAuth 2 authorization URL generation, code exchange, and refresh
+- a validated client struct for sandbox or production QuickBooks access
+- shared request builders and a Req-based HTTP pipeline
+- company bootstrap helpers and generic query support
+- resource modules for customers, items, invoices, payments, accounts, and vendors
+- CDC helpers for incremental synchronization
+- typed errors for validation, auth, rate limiting, API faults, and network failures
+
+## Sandbox setup
+
+1. Create an app in the [Intuit Developer portal](https://developer.intuit.com/).
+2. In **Keys & OAuth**, copy your **Client ID** and **Client Secret**.
+3. Add a local redirect URI such as `http://localhost:4000/auth/quickbooks/callback`.
+4. Open the sandbox company provided in your developer dashboard and note its `realmId`.
+5. Use the `com.intuit.quickbooks.accounting` scope during OAuth.
+
+Useful references:
+
+- [Intuit OAuth 2.0 docs](https://developer.intuit.com/app/developer/qbo/docs/develop/authentication-and-authorization/oauth-2.0)
+- [Intuit sandbox docs](https://developer.intuit.com/app/developer/qbo/docs/develop/sandboxes)
+- [QuickBooks Online quick start](https://developer.intuit.com/app/developer/qbo/docs/get-started/quick-start)
+
+## OAuth usage
+
+Generate the authorization URL:
+
+```elixir
+{:ok, authorization_url} =
+  ExQuickbooks.Auth.authorization_url(
+    client_id: "client-id",
+    redirect_uri: "http://localhost:4000/auth/quickbooks/callback",
+    state: "csrf-token"
+  )
+```
+
+Exchange the callback code for tokens:
+
+```elixir
+{:ok, token} =
+  ExQuickbooks.Auth.exchange_code(
+    client_id: "client-id",
+    client_secret: "client-secret",
+    redirect_uri: "http://localhost:4000/auth/quickbooks/callback",
+    code: "authorization-code",
+    realm_id: "9130357992221046"
+  )
+```
+
+Refresh tokens with the latest refresh token returned by Intuit:
+
+```elixir
+{:ok, refreshed_token} =
+  ExQuickbooks.Auth.refresh_tokens(
+    client_id: "client-id",
+    client_secret: "client-secret",
+    refresh_token: token.refresh_token,
+    realm_id: token.realm_id
+  )
+```
+
+## Basic client creation
+
+Construct a client once you have tokens:
 
 ```elixir
 {:ok, client} =
   ExQuickbooks.new(
     client_id: "client-id",
     client_secret: "client-secret",
-    redirect_uri: "https://example.com/callback",
-    realm_id: "9130357992221046",
-    access_token: "access-token",
-    refresh_token: "refresh-token",
+    redirect_uri: "http://localhost:4000/auth/quickbooks/callback",
+    realm_id: token.realm_id,
+    access_token: token.access_token,
+    refresh_token: token.refresh_token,
     environment: :sandbox,
     minor_version: 75
   )
+```
 
+You can use `ExQuickbooks.request_path/3` to inspect the company-scoped request
+path that the shared HTTP pipeline will use:
+
+```elixir
 ExQuickbooks.request_path(client, ["customer"], query: [active: true])
 #=> "/v3/company/9130357992221046/customer?active=true&minorversion=75"
 ```
 
-## Shared HTTP pipeline
+## Company bootstrap and query helpers
 
-Build a request with the shared request helpers and execute it through the
-common transport pipeline:
-
-```elixir
-customer_request =
-  ExQuickbooks.Request.get(
-    ["customer", "123"],
-    response_path: ["Customer"]
-  )
-
-{:ok, customer} = ExQuickbooks.request(client, customer_request)
-```
-
-The shared request helpers cover the common QuickBooks request shapes:
-
-```elixir
-ExQuickbooks.Request.create(["customer"], %{"DisplayName" => "Acme"}, response_path: ["Customer"])
-ExQuickbooks.Request.update(["invoice"], %{"Id" => "10", "SyncToken" => "1"}, response_path: ["Invoice"])
-ExQuickbooks.Request.operation(["invoice"], :void, %{"Id" => "10", "SyncToken" => "1"}, response_path: ["Invoice"])
-ExQuickbooks.Request.query("SELECT * FROM Customer")
-ExQuickbooks.Request.cdc(["Customer", "Invoice"], "2026-04-20T00:00:00Z")
-```
-
-The HTTP pipeline automatically:
-
-- injects bearer auth from the client
-- selects the sandbox or production QuickBooks host
-- appends `minorversion` when configured on the client
-- decodes JSON responses
-- parses QuickBooks `Fault` responses into typed `ExQuickbooks.Error` values
-- retries `429`, `500`, `502`, `503`, and `504` responses, honoring `Retry-After`
-
-## Company bootstrap and generic query
-
-Confirm that a client can reach the target company:
+Confirm the client can reach the target company:
 
 ```elixir
 {:ok, company_info} = ExQuickbooks.CompanyInfo.get(client)
 ```
 
-Run raw QuickBooks query statements:
+Run raw QuickBooks queries with optional pagination:
 
 ```elixir
 {:ok, query_response} =
@@ -94,30 +121,16 @@ Run raw QuickBooks query statements:
     client,
     "SELECT * FROM Customer",
     start_position: 1,
-    max_results: 50
+    max_results: 25
   )
-```
 
-Extract the primary collection from the returned `QueryResponse`:
-
-```elixir
 {:ok, {"Customer", customers}} =
   ExQuickbooks.Query.top_level_collection(query_response)
 ```
 
-## Core resources
+## Customer and invoice flows
 
-The core resource modules expose `list/2`, `get/3`, `create/3`, and `update/3`
-helpers for the most common accounting entities:
-
-- `ExQuickbooks.Customers`
-- `ExQuickbooks.Items`
-- `ExQuickbooks.Invoices`
-- `ExQuickbooks.Payments`
-- `ExQuickbooks.Accounts`
-- `ExQuickbooks.Vendors`
-
-Example customer flow:
+Fetch active customers:
 
 ```elixir
 {:ok, customers} =
@@ -126,9 +139,11 @@ Example customer flow:
     where: "Active = true",
     max_results: 25
   )
+```
 
-{:ok, customer} = ExQuickbooks.Customers.get(client, "123")
+Create and update a customer:
 
+```elixir
 {:ok, created_customer} =
   ExQuickbooks.Customers.create(client, %{
     "DisplayName" => "Acme"
@@ -142,7 +157,34 @@ Example customer flow:
   })
 ```
 
-The same pattern works for items, invoices, payments, accounts, and vendors.
+Create and update an invoice:
+
+```elixir
+{:ok, created_invoice} =
+  ExQuickbooks.Invoices.create(client, %{
+    "CustomerRef" => %{"value" => created_customer["Id"]},
+    "Line" => [
+      %{
+        "Amount" => 100,
+        "DetailType" => "SalesItemLineDetail"
+      }
+    ]
+  })
+
+{:ok, updated_invoice} =
+  ExQuickbooks.Invoices.update(client, %{
+    "Id" => created_invoice["Id"],
+    "SyncToken" => created_invoice["SyncToken"],
+    "PrivateNote" => "Updated through ExQuickbooks"
+  })
+```
+
+The same `list/2`, `get/3`, `create/3`, and `update/3` pattern is available for:
+
+- `ExQuickbooks.Items`
+- `ExQuickbooks.Payments`
+- `ExQuickbooks.Accounts`
+- `ExQuickbooks.Vendors`
 
 ## CDC sync helpers
 
@@ -155,11 +197,7 @@ Fetch grouped changes since a checkpoint:
     [:customer],
     "2026-04-20T00:00:00Z"
   )
-```
 
-Fetch multiple entity groups together:
-
-```elixir
 {:ok, item_changes} =
   ExQuickbooks.CDC.fetch(
     client,
@@ -175,7 +213,7 @@ Fetch multiple entity groups together:
   )
 ```
 
-Each entity key maps to grouped sync data:
+Each entity key maps to grouped records and deleted IDs:
 
 ```elixir
 %{
@@ -186,59 +224,34 @@ Each entity key maps to grouped sync data:
 }
 ```
 
-## OAuth 2
+## Error handling
 
-Generate the authorization URL:
-
-```elixir
-{:ok, authorization_url} =
-  ExQuickbooks.Auth.authorization_url(
-    client_id: "client-id",
-    redirect_uri: "https://example.com/callback",
-    state: "csrf-token"
-  )
-```
-
-Exchange the callback code for tokens:
+The library returns typed `ExQuickbooks.Error` values for expected failures:
 
 ```elixir
-{:ok, token} =
-  ExQuickbooks.Auth.exchange_code(
-    client_id: "client-id",
-    client_secret: "client-secret",
-    redirect_uri: "https://example.com/callback",
-    code: "authorization-code",
-    realm_id: "9130357992221046"
-  )
+case ExQuickbooks.Customers.get(client, "123") do
+  {:ok, customer} ->
+    {:ok, customer}
+
+  {:error, %ExQuickbooks.Error{type: :not_found}} ->
+    {:error, :missing_customer}
+
+  {:error, %ExQuickbooks.Error{type: :rate_limited, details: %{"retry_after" => retry_after}}} ->
+    {:error, {:retry_later, retry_after}}
+
+  {:error, %ExQuickbooks.Error{type: :unauthorized}} ->
+    {:error, :refresh_required}
+
+  {:error, %ExQuickbooks.Error{} = error} ->
+    {:error, error}
+end
 ```
 
-Use the returned token values when constructing a client:
+## Versioning strategy
 
-```elixir
-{:ok, client} =
-  ExQuickbooks.new(
-    client_id: "client-id",
-    client_secret: "client-secret",
-    redirect_uri: "https://example.com/callback",
-    realm_id: token.realm_id,
-    access_token: token.access_token,
-    refresh_token: token.refresh_token,
-    environment: :sandbox
-  )
-```
+ExQuickbooks is still pre-`1.0`, so versioning is conservative:
 
-Refresh tokens with the latest refresh token and persist the replacement refresh
-token from the response:
-
-```elixir
-{:ok, refreshed_token} =
-  ExQuickbooks.Auth.refresh_tokens(
-    client_id: "client-id",
-    client_secret: "client-secret",
-    refresh_token: token.refresh_token,
-    realm_id: token.realm_id
-  )
-```
-
-You can check token expiry with `ExQuickbooks.Token.access_token_expired?/2` and
-`ExQuickbooks.Token.refresh_token_expired?/2`.
+- additive endpoint and helper support bumps the **minor** version (`0.x`)
+- bug fixes and documentation-only updates bump the **patch** version
+- breaking API changes will use the next pre-`1.0` minor version, and then move
+  to normal SemVer major releases once the package reaches `1.0`
