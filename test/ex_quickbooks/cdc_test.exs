@@ -41,13 +41,29 @@ defmodule ExQuickbooks.CDCTest do
              )
 
     assert grouped_changes["Customer"] == %{
-             records: [%{"Id" => "123"}],
-             deleted_ids: [%{"Type" => "Customer", "Id" => "456"}]
+             records: [
+               %ExQuickbooks.Customer{id: "123", attributes: %{"Id" => "123"}}
+             ],
+             deleted_ids: [
+               %ExQuickbooks.DeletedId{
+                 id: "456",
+                 type: "Customer",
+                 attributes: %{"Type" => "Customer", "Id" => "456"}
+               }
+             ]
            }
 
     assert grouped_changes["Invoice"] == %{
-             records: [%{"Id" => "789"}],
-             deleted_ids: [%{"Type" => "Invoice", "Id" => "101"}]
+             records: [
+               %ExQuickbooks.Invoice{id: "789", attributes: %{"Id" => "789"}}
+             ],
+             deleted_ids: [
+               %ExQuickbooks.DeletedId{
+                 id: "101",
+                 type: "Invoice",
+                 attributes: %{"Type" => "Invoice", "Id" => "101"}
+               }
+             ]
            }
   end
 
@@ -85,7 +101,9 @@ defmodule ExQuickbooks.CDCTest do
              )
 
     assert grouped_changes["Item"] == %{
-             records: [%{"Id" => "123"}],
+             records: [
+               %ExQuickbooks.Item{id: "123", attributes: %{"Id" => "123"}}
+             ],
              deleted_ids: []
            }
 
@@ -112,13 +130,23 @@ defmodule ExQuickbooks.CDCTest do
              })
 
     assert grouped_changes["Customer"] == %{
-             records: [%{"Id" => "123"}],
+             records: [
+               %ExQuickbooks.Customer{id: "123", attributes: %{"Id" => "123"}}
+             ],
              deleted_ids: []
            }
 
     assert grouped_changes["Invoice"] == %{
-             records: [%{"Id" => "789"}],
-             deleted_ids: [%{"Type" => "Invoice", "Id" => "101"}]
+             records: [
+               %ExQuickbooks.Invoice{id: "789", attributes: %{"Id" => "789"}}
+             ],
+             deleted_ids: [
+               %ExQuickbooks.DeletedId{
+                 id: "101",
+                 type: "Invoice",
+                 attributes: %{"Type" => "Invoice", "Id" => "101"}
+               }
+             ]
            }
   end
 

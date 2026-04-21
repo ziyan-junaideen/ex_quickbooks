@@ -6,7 +6,7 @@ defmodule ExQuickbooks.Resource do
   ]
 
   @spec list(ExQuickbooks.Client.t(), String.t(), keyword()) ::
-          {:ok, [map()]} | {:error, ExQuickbooks.Error.t()}
+          {:ok, [struct() | map()]} | {:error, ExQuickbooks.Error.t()}
   def list(client, resource_name, options \\ []) do
     list_specific_options = Keyword.take(options, [:where])
 
@@ -22,7 +22,7 @@ defmodule ExQuickbooks.Resource do
   end
 
   @spec get(ExQuickbooks.Client.t(), String.t(), String.t(), String.t() | integer(), keyword()) ::
-          {:ok, map()} | {:error, ExQuickbooks.Error.t()}
+          {:ok, struct() | map()} | {:error, ExQuickbooks.Error.t()}
   def get(client, resource_path, resource_name, id, options \\ []) do
     request =
       ExQuickbooks.Request.get(
@@ -34,7 +34,7 @@ defmodule ExQuickbooks.Resource do
   end
 
   @spec create(ExQuickbooks.Client.t(), String.t(), String.t(), map(), keyword()) ::
-          {:ok, map()} | {:error, ExQuickbooks.Error.t()}
+          {:ok, struct() | map()} | {:error, ExQuickbooks.Error.t()}
   def create(client, resource_path, resource_name, attributes, options \\ []) do
     request =
       ExQuickbooks.Request.create(
@@ -47,7 +47,7 @@ defmodule ExQuickbooks.Resource do
   end
 
   @spec update(ExQuickbooks.Client.t(), String.t(), String.t(), map(), keyword()) ::
-          {:ok, map()} | {:error, ExQuickbooks.Error.t()}
+          {:ok, struct() | map()} | {:error, ExQuickbooks.Error.t()}
   def update(client, resource_path, resource_name, attributes, options \\ []) do
     request =
       ExQuickbooks.Request.update(

@@ -32,7 +32,12 @@ defmodule ExQuickbooks.HTTPTest do
 
     request = ExQuickbooks.Request.get(["customer", "123"], response_path: ["Customer"])
 
-    assert {:ok, %{"Id" => "123", "DisplayName" => "Acme"}} =
+    assert {:ok,
+            %ExQuickbooks.Customer{
+              id: "123",
+              display_name: "Acme",
+              attributes: %{"Id" => "123", "DisplayName" => "Acme"}
+            }} =
              ExQuickbooks.request(client, request,
                max_retries: 0,
                base_url: "http://localhost:#{bypass.port}"
@@ -63,7 +68,12 @@ defmodule ExQuickbooks.HTTPTest do
 
     request = ExQuickbooks.Request.query("SELECT * FROM Customer")
 
-    assert {:ok, %{"Customer" => [%{"Id" => "123"}]}} =
+    assert {:ok,
+            %{
+              "Customer" => [
+                %ExQuickbooks.Customer{id: "123", attributes: %{"Id" => "123"}}
+              ]
+            }} =
              ExQuickbooks.request(client, request,
                max_retries: 0,
                base_url: "http://localhost:#{bypass.port}"
@@ -137,7 +147,7 @@ defmodule ExQuickbooks.HTTPTest do
 
     request = ExQuickbooks.Request.get(["customer", "123"], response_path: ["Customer"])
 
-    assert {:ok, %{"Id" => "123"}} =
+    assert {:ok, %ExQuickbooks.Customer{id: "123", attributes: %{"Id" => "123"}}} =
              ExQuickbooks.request(
                client,
                request,
