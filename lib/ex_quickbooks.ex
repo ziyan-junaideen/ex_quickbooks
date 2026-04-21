@@ -7,6 +7,7 @@ defmodule ExQuickbooks do
   - a validated client struct for QuickBooks API configuration
   - shared request builders and an HTTP pipeline for company-scoped endpoints
   - read-only bootstrap modules for company info and generic queries
+  - resource modules for customers, items, invoices, payments, accounts, and vendors
   - OAuth 2 helpers for authorization URL generation, code exchange, and token refresh
 
   ## Examples
