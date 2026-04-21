@@ -7,6 +7,7 @@ The library currently includes:
 - a validated client struct
 - shared environment, request builders, and an HTTP pipeline
 - read-only bootstrap modules for company info and generic queries
+- resource modules for customers, items, invoices, payments, accounts, and vendors
 - typed library error values
 - OAuth 2 helpers for authorization URL generation, code exchange, and refresh
 - Bypass-based test helpers for asserting request shape
@@ -18,7 +19,7 @@ Add `ex_quickbooks` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:ex_quickbooks, "~> 0.5.0"}
+    {:ex_quickbooks, "~> 0.6.0"}
   ]
 end
 ```
@@ -102,6 +103,45 @@ Extract the primary collection from the returned `QueryResponse`:
 {:ok, {"Customer", customers}} =
   ExQuickbooks.Query.top_level_collection(query_response)
 ```
+
+## Core resources
+
+The core resource modules expose `list/2`, `get/3`, `create/3`, and `update/3`
+helpers for the most common accounting entities:
+
+- `ExQuickbooks.Customers`
+- `ExQuickbooks.Items`
+- `ExQuickbooks.Invoices`
+- `ExQuickbooks.Payments`
+- `ExQuickbooks.Accounts`
+- `ExQuickbooks.Vendors`
+
+Example customer flow:
+
+```elixir
+{:ok, customers} =
+  ExQuickbooks.Customers.list(
+    client,
+    where: "Active = true",
+    max_results: 25
+  )
+
+{:ok, customer} = ExQuickbooks.Customers.get(client, "123")
+
+{:ok, created_customer} =
+  ExQuickbooks.Customers.create(client, %{
+    "DisplayName" => "Acme"
+  })
+
+{:ok, updated_customer} =
+  ExQuickbooks.Customers.update(client, %{
+    "Id" => created_customer["Id"],
+    "SyncToken" => created_customer["SyncToken"],
+    "DisplayName" => "Acme Updated"
+  })
+```
+
+The same pattern works for items, invoices, payments, accounts, and vendors.
 
 ## OAuth 2
 
