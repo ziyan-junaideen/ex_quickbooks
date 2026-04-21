@@ -6,6 +6,7 @@ The library currently includes:
 
 - a validated client struct
 - shared environment, request builders, and an HTTP pipeline
+- read-only bootstrap modules for company info and generic queries
 - typed library error values
 - OAuth 2 helpers for authorization URL generation, code exchange, and refresh
 - Bypass-based test helpers for asserting request shape
@@ -17,7 +18,7 @@ Add `ex_quickbooks` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:ex_quickbooks, "~> 0.4.0"}
+    {:ex_quickbooks, "~> 0.5.0"}
   ]
 end
 ```
@@ -74,6 +75,33 @@ The HTTP pipeline automatically:
 - decodes JSON responses
 - parses QuickBooks `Fault` responses into typed `ExQuickbooks.Error` values
 - retries `429`, `500`, `502`, `503`, and `504` responses, honoring `Retry-After`
+
+## Company bootstrap and generic query
+
+Confirm that a client can reach the target company:
+
+```elixir
+{:ok, company_info} = ExQuickbooks.CompanyInfo.get(client)
+```
+
+Run raw QuickBooks query statements:
+
+```elixir
+{:ok, query_response} =
+  ExQuickbooks.Query.run(
+    client,
+    "SELECT * FROM Customer",
+    start_position: 1,
+    max_results: 50
+  )
+```
+
+Extract the primary collection from the returned `QueryResponse`:
+
+```elixir
+{:ok, {"Customer", customers}} =
+  ExQuickbooks.Query.top_level_collection(query_response)
+```
 
 ## OAuth 2
 
