@@ -1,9 +1,13 @@
-# ExQuickbooks
+# ExQuickBooks
 
-ExQuickbooks is an Elixir client for the **QuickBooks Online Accounting API**.
+ExQuickBooks is an Elixir client for the **QuickBooks Online Accounting API**.
 It keeps the public API library-oriented and explicit: callers build a client,
 run OAuth flows, use resource helpers, and handle expected failures through
-`{:ok, result}` / `{:error, %ExQuickbooks.Error{}}` tuples.
+`{:ok, result}` / `{:error, %ExQuickBooks.Error{}}` tuples.
+
+The preferred Elixir namespace is `ExQuickBooks`. The legacy `ExQuickbooks`
+namespace remains available temporarily for backward compatibility and is
+planned for removal at v1.
 
 ## Installation
 
@@ -11,11 +15,11 @@ Add `ex_quickbooks` to your dependencies:
 
 ```elixir
 def deps do
-  [
-    {:ex_quickbooks, "~> 0.8.0"}
-  ]
-end
-```
+     [
+      {:ex_quickbooks, "~> 0.9.0"}
+     ]
+   end
+ ```
 
 ## What the library covers
 
@@ -47,7 +51,7 @@ Generate the authorization URL:
 
 ```elixir
 {:ok, authorization_url} =
-  ExQuickbooks.Auth.authorization_url(
+  ExQuickBooks.Auth.authorization_url(
     client_id: "client-id",
     redirect_uri: "http://localhost:4000/auth/quickbooks/callback",
     state: "csrf-token"
@@ -58,7 +62,7 @@ Exchange the callback code for tokens:
 
 ```elixir
 {:ok, token} =
-  ExQuickbooks.Auth.exchange_code(
+  ExQuickBooks.Auth.exchange_code(
     client_id: "client-id",
     client_secret: "client-secret",
     redirect_uri: "http://localhost:4000/auth/quickbooks/callback",
@@ -71,7 +75,7 @@ Refresh tokens with the latest refresh token returned by Intuit:
 
 ```elixir
 {:ok, refreshed_token} =
-  ExQuickbooks.Auth.refresh_tokens(
+  ExQuickBooks.Auth.refresh_tokens(
     client_id: "client-id",
     client_secret: "client-secret",
     refresh_token: token.refresh_token,
@@ -85,7 +89,7 @@ Construct a client once you have tokens:
 
 ```elixir
 {:ok, client} =
-  ExQuickbooks.new(
+  ExQuickBooks.new(
     client_id: "client-id",
     client_secret: "client-secret",
     redirect_uri: "http://localhost:4000/auth/quickbooks/callback",
@@ -97,11 +101,11 @@ Construct a client once you have tokens:
   )
 ```
 
-You can use `ExQuickbooks.request_path/3` to inspect the company-scoped request
+You can use `ExQuickBooks.request_path/3` to inspect the company-scoped request
 path that the shared HTTP pipeline will use:
 
 ```elixir
-ExQuickbooks.request_path(client, ["customer"], query: [active: true])
+ExQuickBooks.request_path(client, ["customer"], query: [active: true])
 #=> "/v3/company/9130357992221046/customer?active=true&minorversion=75"
 ```
 
@@ -110,14 +114,14 @@ ExQuickbooks.request_path(client, ["customer"], query: [active: true])
 Confirm the client can reach the target company:
 
 ```elixir
-{:ok, company_info} = ExQuickbooks.CompanyInfo.get(client)
+{:ok, company_info} = ExQuickBooks.CompanyInfo.get(client)
 ```
 
 Run raw QuickBooks queries with optional pagination:
 
 ```elixir
 {:ok, query_response} =
-  ExQuickbooks.Query.run(
+  ExQuickBooks.Query.run(
     client,
     "SELECT * FROM Customer",
     start_position: 1,
@@ -125,7 +129,7 @@ Run raw QuickBooks queries with optional pagination:
   )
 
 {:ok, {"Customer", customers}} =
-  ExQuickbooks.Query.top_level_collection(query_response)
+  ExQuickBooks.Query.top_level_collection(query_response)
 ```
 
 ## Customer and invoice flows
@@ -134,7 +138,7 @@ Fetch active customers:
 
 ```elixir
 {:ok, customers} =
-  ExQuickbooks.Customers.list(
+  ExQuickBooks.Customers.list(
     client,
     where: "Active = true",
     max_results: 25
@@ -145,12 +149,12 @@ Create and update a customer:
 
 ```elixir
 {:ok, created_customer} =
-  ExQuickbooks.Customers.create(client, %{
+  ExQuickBooks.Customers.create(client, %{
     "DisplayName" => "Acme"
   })
 
 {:ok, updated_customer} =
-  ExQuickbooks.Customers.update(client, %{
+  ExQuickBooks.Customers.update(client, %{
     "Id" => created_customer["Id"],
     "SyncToken" => created_customer["SyncToken"],
     "DisplayName" => "Acme Updated"
@@ -161,7 +165,7 @@ Create and update an invoice:
 
 ```elixir
 {:ok, created_invoice} =
-  ExQuickbooks.Invoices.create(client, %{
+  ExQuickBooks.Invoices.create(client, %{
     "CustomerRef" => %{"value" => created_customer["Id"]},
     "Line" => [
       %{
@@ -172,7 +176,7 @@ Create and update an invoice:
   })
 
 {:ok, updated_invoice} =
-  ExQuickbooks.Invoices.update(client, %{
+  ExQuickBooks.Invoices.update(client, %{
     "Id" => created_invoice["Id"],
     "SyncToken" => created_invoice["SyncToken"],
     "PrivateNote" => "Updated through ExQuickbooks"
@@ -181,10 +185,10 @@ Create and update an invoice:
 
 The same `list/2`, `get/3`, `create/3`, and `update/3` pattern is available for:
 
-- `ExQuickbooks.Items`
-- `ExQuickbooks.Payments`
-- `ExQuickbooks.Accounts`
-- `ExQuickbooks.Vendors`
+- `ExQuickBooks.Items`
+- `ExQuickBooks.Payments`
+- `ExQuickBooks.Accounts`
+- `ExQuickBooks.Vendors`
 
 ## CDC sync helpers
 
@@ -192,21 +196,21 @@ Fetch grouped changes since a checkpoint:
 
 ```elixir
 {:ok, customer_changes} =
-  ExQuickbooks.CDC.fetch(
+  ExQuickBooks.CDC.fetch(
     client,
     [:customer],
     "2026-04-20T00:00:00Z"
   )
 
 {:ok, item_changes} =
-  ExQuickbooks.CDC.fetch(
+  ExQuickBooks.CDC.fetch(
     client,
     [:item],
     "2026-04-20T00:00:00Z"
   )
 
 {:ok, invoice_and_payment_changes} =
-  ExQuickbooks.CDC.fetch(
+  ExQuickBooks.CDC.fetch(
     client,
     [:invoice, :payment],
     "2026-04-20T00:00:00Z"
