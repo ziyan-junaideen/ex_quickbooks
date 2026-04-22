@@ -33,36 +33,36 @@ defmodule ExQuickbooks.MixProject do
 
   defp docs do
     [
-      main: "ExQuickbooks",
+      main: "ExQuickBooks",
       extras: ["README.md"],
       source_ref: "v#{version()}",
       groups_for_modules: [
         "Core API": [
-          ExQuickbooks,
-          ExQuickbooks.Client,
-          ExQuickbooks.Error
+          ExQuickBooks,
+          ExQuickBooks.Client,
+          ExQuickBooks.Error
         ],
         Authentication: [
-          ExQuickbooks.Auth,
-          ExQuickbooks.Token
+          ExQuickBooks.Auth,
+          ExQuickBooks.Token
         ],
         Transport: [
-          ExQuickbooks.Request,
-          ExQuickbooks.HTTP,
-          ExQuickbooks.Response
+          ExQuickBooks.Request,
+          ExQuickBooks.HTTP,
+          ExQuickBooks.Response
         ],
         Bootstrap: [
-          ExQuickbooks.CompanyInfo,
-          ExQuickbooks.Query,
-          ExQuickbooks.CDC
+          ExQuickBooks.CompanyInfo,
+          ExQuickBooks.Query,
+          ExQuickBooks.CDC
         ],
         Resources: [
-          ExQuickbooks.Customers,
-          ExQuickbooks.Items,
-          ExQuickbooks.Invoices,
-          ExQuickbooks.Payments,
-          ExQuickbooks.Accounts,
-          ExQuickbooks.Vendors
+          ExQuickBooks.Customers,
+          ExQuickBooks.Items,
+          ExQuickBooks.Invoices,
+          ExQuickBooks.Payments,
+          ExQuickBooks.Accounts,
+          ExQuickBooks.Vendors
         ]
       ]
     ]
@@ -92,6 +92,6 @@ defmodule ExQuickbooks.MixProject do
   end
 
   defp version do
-    "0.8.0"
+    "0.9.0"
   end
 end
